@@ -1,0 +1,154 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String              @id @default(cuid())
+  name               String
+  email              String              @unique
+  passwordHash       String
+  role               String              @default("USER")
+  canSubmit          Boolean             @default(true)
+  banReason          String?
+  bannedAt           DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  ideas              Idea[]
+  moderatedIdeas     Idea[]              @relation("ModeratorIdeas")
+  votes              Vote[]
+  comments           Comment[]
+  reports            Report[]
+  sessions           Session[]
+  resolvedReports    Report[]            @relation("ResolverReports")
+  moderationLogs     ModerationLog[]     @relation("ModeratorLogs")
+  targetedByLogs     ModerationLog[]     @relation("TargetUserLogs")
+  emailNotifications EmailNotification[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Idea {
+  id              String          @id @default(cuid())
+  title           String
+  description     String
+  imagePath       String
+  status          String          @default("PENDING")
+  rejectionReason String?
+  submittedAt     DateTime        @default(now())
+  publishedAt     DateTime?
+  moderatedAt     DateTime?
+  updatedAt       DateTime        @updatedAt
+  voteCount       Int             @default(0)
+  reportCount     Int             @default(0)
+  commentsCount   Int             @default(0)
+  submitterId     String
+  moderatorId     String?
+  submitter       User            @relation(fields: [submitterId], references: [id], onDelete: Cascade)
+  moderator       User?           @relation("ModeratorIdeas", fields: [moderatorId], references: [id], onDelete: SetNull)
+  tags            IdeaTag[]
+  votes           Vote[]
+  comments        Comment[]
+  reports         Report[]
+  moderationLogs  ModerationLog[]
+
+  @@index([status])
+  @@index([submitterId])
+}
+
+model IdeaTag {
+  id     String @id @default(cuid())
+  label  String
+  ideaId String
+  idea   Idea   @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  @@index([label])
+  @@index([ideaId])
+}
+
+model Vote {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  userId    String
+  ideaId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  idea      Idea     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ideaId])
+  @@index([ideaId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  userId    String
+  ideaId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  idea      Idea     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  @@index([ideaId])
+}
+
+model Report {
+  id         String   @id @default(cuid())
+  reason     String
+  details    String?
+  status     String   @default("OPEN")
+  createdAt  DateTime @default(now())
+  resolvedAt DateTime?
+  userId     String
+  ideaId     String
+  resolverId String?
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  idea       Idea     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  resolver   User?    @relation("ResolverReports", fields: [resolverId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, ideaId])
+  @@index([ideaId, status])
+}
+
+model ModerationLog {
+  id           String   @id @default(cuid())
+  action       String
+  note         String?
+  createdAt    DateTime @default(now())
+  moderatorId  String
+  ideaId       String?
+  targetUserId String?
+  moderator    User     @relation("ModeratorLogs", fields: [moderatorId], references: [id], onDelete: Cascade)
+  idea         Idea?    @relation(fields: [ideaId], references: [id], onDelete: SetNull)
+  targetUser   User?    @relation("TargetUserLogs", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([ideaId])
+  @@index([targetUserId])
+}
+
+model EmailNotification {
+  id                String   @id @default(cuid())
+  type              String
+  toEmail           String
+  subject           String
+  html              String
+  status            String   @default("QUEUED")
+  providerMessageId String?
+  createdAt         DateTime @default(now())
+  sentAt            DateTime?
+  userId            String?
+  user              User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([toEmail])
+}

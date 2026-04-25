@@ -1,0 +1,11 @@
+services:
+  dixy-app:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    volumes:
+      - ./public/uploads:/app/public/uploads
+      - ./storage/emails:/app/storage/emails
+      - ./prisma:/app/prisma

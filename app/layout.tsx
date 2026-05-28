@@ -1,6 +1,7 @@
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getCurrentUser } from "@/lib/auth";
+import ChatButton from "@/components/ChatButton";
 
 export const metadata = {
   title: "Dixy Ideas",
@@ -14,7 +15,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <SiteHeader user={user} />
         <main className="page-shell">{children}</main>
+        <ChatButton />
       </body>
     </html>
   );
 }
+

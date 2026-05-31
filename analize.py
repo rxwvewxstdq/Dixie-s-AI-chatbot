@@ -4,6 +4,7 @@ from typing import Dict, Any, Optional
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import re
+import sys
 
 # =========================
 # 1. ПОДКЛЮЧЕНИЕ К LM STUDIO
@@ -229,38 +230,59 @@ def format_response(product: Optional[Dict], requirements: Dict) -> str:
 # 5. FLASK API
 # =========================
 
-app = Flask(__name__)
-CORS(app)
+# app = Flask(__name__)
+# CORS(app)
 
 
-@app.route("/chat", methods=["POST"])
-def chat():
-    data = request.get_json()
-    if not data or "message" not in data:
-        return jsonify({"error": "Не передан параметр 'message'"}), 400
+# @app.route("/chat", methods=["POST"])
+# def chat():
+#     data = request.get_json()
+#     if not data or "message" not in data:
+#         return jsonify({"error": "Не передан параметр 'message'"}), 400
 
-    user_message = data["message"]
+#     user_message = data["message"]
 
+#     try:
+#         requirements = extract_requirements(user_message)
+#         best_product = find_best_product(requirements)
+#         answer = format_response(best_product, requirements)
+#         return jsonify({"response": answer})
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
+
+
+# @app.route("/health", methods=["GET"])
+# def health():
+#     return jsonify({"status": "ok", "lm_studio": "connected"})
+
+
+# if __name__ == "__main__":
+#     print("=" * 50)
+#     print("Сервер чат-бота запущен!")
+#     print(f"Подключение к LM Studio: {LM_STUDIO_URL}")
+#     print(f"API доступен на: http://0.0.0.0:8080")
+#     print(f"Отправляйте POST запросы на: http://0.0.0.0:8080/chat")
+#     print("=" * 50)
+
+#     app.run(host="0.0.0.0", port=8080, debug=False)
+
+def main():
+    if len(sys.argv) > 1:
+        user_message = sys.argv[1]
+    else:
+        user_message = input()
+    
     try:
         requirements = extract_requirements(user_message)
-        best_product = find_best_product(requirements)
-        answer = format_response(best_product, requirements)
-        return jsonify({"response": answer})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/health", methods=["GET"])
-def health():
-    return jsonify({"status": "ok", "lm_studio": "connected"})
+        requirements = manual_extract_requirements(user_message)
+    
+    best_product = find_best_product(requirements)
+    
+    answer = format_response(best_product, requirements)
+    
+    print(json.dumps({"response": answer}))
 
 
 if __name__ == "__main__":
-    print("=" * 50)
-    print("Сервер чат-бота запущен!")
-    print(f"Подключение к LM Studio: {LM_STUDIO_URL}")
-    print(f"API доступен на: http://0.0.0.0:8080")
-    print(f"Отправляйте POST запросы на: http://0.0.0.0:8080/chat")
-    print("=" * 50)
-
-    app.run(host="0.0.0.0", port=8080, debug=False)
+    main()

@@ -7,7 +7,6 @@ export default function ChatWindow({ onClose }: { onClose: () => void }) {
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Автопрокрутка вниз при новых сообщениях
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -15,20 +14,29 @@ export default function ChatWindow({ onClose }: { onClose: () => void }) {
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    setMessages([...messages, { from: "user", text: input }]);
+    const userMessage = input;
+    setMessages((prev) => [...prev, { from: "user", text: userMessage }]);
     setInput("");
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8080/chat", {
+      // ИЗМЕНЕНО: теперь запрос идет на свой API, а не напрямую в LM Studio
+      const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input }),
+        body: JSON.stringify({ message: userMessage }),
       });
+      
       const data = await res.json();
-      setMessages((prev) => [...prev, { from: "bot", text: data.response }]);
+      
+      if (data.error) {
+        setMessages((prev) => [...prev, { from: "bot", text: `Ошибка: ${data.error}` }]);
+      } else {
+        setMessages((prev) => [...prev, { from: "bot", text: data.response }]);
+      }
     } catch (e) {
-      setMessages((prev) => [...prev, { from: "bot", text: "Ошибка: сервер недоступен" }]);
+      console.error("Fetch error:", e);
+      setMessages((prev) => [...prev, { from: "bot", text: "Ошибка: сервер недоступен. Проверьте, запущен ли LM Studio." }]);
     } finally {
       setLoading(false);
     }
@@ -52,7 +60,6 @@ export default function ChatWindow({ onClose }: { onClose: () => void }) {
         fontFamily: "'Inter', sans-serif",
       }}
     >
-      {/* Заголовок */}
       <div
         style={{
           padding: "10px 16px",
@@ -82,7 +89,6 @@ export default function ChatWindow({ onClose }: { onClose: () => void }) {
         </button>
       </div>
 
-      {/* Сообщения */}
       <div
         style={{
           flex: 1,
@@ -95,38 +101,37 @@ export default function ChatWindow({ onClose }: { onClose: () => void }) {
         }}
       >
         {messages.map((m, i) => (
-  <div
-    key={i}
-    style={{
-      alignSelf: m.from === "user" ? "flex-end" : "flex-start",
-      display: "flex",
-      flexDirection: "column",
-      marginBottom: "6px",
-    }}
-  >
-    <span
-      style={{
-        display: "inline-block",
-        backgroundColor: m.from === "user" ? "#ffebcc" : "#f0f0f0",
-        color: "#111",
-        padding: "8px 12px",
-        borderRadius: "12px",
-        maxWidth: "100%",     // займёт всю ширину доступного контейнера
-        wordBreak: "break-word",
-        fontSize: "14px",
-        whiteSpace: "pre-wrap", // короткие слова не ломаются
-      }}
-    >
-      {m.text}
-    </span>
-  </div>
-))}
+          <div
+            key={i}
+            style={{
+              alignSelf: m.from === "user" ? "flex-end" : "flex-start",
+              display: "flex",
+              flexDirection: "column",
+              marginBottom: "6px",
+            }}
+          >
+            <span
+              style={{
+                display: "inline-block",
+                backgroundColor: m.from === "user" ? "#ffebcc" : "#f0f0f0",
+                color: "#111",
+                padding: "8px 12px",
+                borderRadius: "12px",
+                maxWidth: "100%",
+                wordBreak: "break-word",
+                fontSize: "14px",
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {m.text}
+            </span>
+          </div>
+        ))}
 
         {loading && <span style={{ fontSize: "12px", color: "#999" }}>Анализирую...</span>}
         <div ref={scrollRef}></div>
       </div>
 
-      {/* Поле ввода */}
       <div
         style={{
           display: "flex",

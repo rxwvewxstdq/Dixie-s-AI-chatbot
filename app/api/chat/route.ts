@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     console.log("=== НОВЫЙ ЗАПРОС ===");
     console.log("1. Сообщение от пользователя:", message);
     
-    // Проверяем существование Python скрипта
+    // Проверка существования скрипта
     const pythonScript = path.join(process.cwd(), 'analize.py');
     console.log("2. Путь к скрипту:", pythonScript);
     
@@ -25,18 +25,18 @@ export async function POST(request: Request) {
     }
     console.log("3. Файл analize.py найден");
     
-    // Экранируем кавычки в сообщении
+    // Экранируем кавычки
     const escapedMessage = message.replace(/"/g, '\\"').replace(/\n/g, ' ');
     console.log("4. Сообщение после экранирования:", escapedMessage.substring(0, 100));
     
-    // Запускаем Python скрипт
+    // Запускаем скрипт
     const command = `python "${pythonScript}" "${escapedMessage}"`;
     console.log("5. Выполняю команду:", command);
     
     try {
       const { stdout, stderr } = await execAsync(command, {
-        timeout: 30000, // 30 секунд таймаут
-        maxBuffer: 1024 * 1024 * 10, // 10MB буфер
+        timeout: 30000,
+        maxBuffer: 1024 * 1024 * 10,
       });
       
       if (stderr) {
@@ -44,8 +44,8 @@ export async function POST(request: Request) {
       }
       
       console.log("7. STDOUT (вывод Python):", stdout);
+
       
-      // Парсим JSON ответ
       let result;
       try {
         result = JSON.parse(stdout);

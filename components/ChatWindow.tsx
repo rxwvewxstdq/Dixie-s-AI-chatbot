@@ -20,7 +20,7 @@ export default function ChatWindow({ onClose }: { onClose: () => void }) {
     setLoading(true);
 
     try {
-      // ИЗМЕНЕНО: теперь запрос идет на свой API, а не напрямую в LM Studio
+
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
